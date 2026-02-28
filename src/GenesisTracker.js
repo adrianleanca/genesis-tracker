@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { saveUserData, getUserDoc, subscribeToCollection, deleteUserDoc } from "./firebase";
 
 const T = {
   ro: {
@@ -168,7 +169,7 @@ const EMPTY_ACTION = {
   history: [], // { date, action, details }
 };
 
-export default function GenesisTracker() {
+export default function GenesisTracker({ user, onLogout }) {
   const [actions, setActions] = useState([]);
   const [domains, setDomains] = useState(DEFAULT_DOMAINS);
   const [loading, setLoading] = useState(true);
@@ -201,51 +202,72 @@ export default function GenesisTracker() {
   useEffect(() => { const c = () => setIsMobile(window.innerWidth < 768); c(); window.addEventListener("resize", c); return () => window.removeEventListener("resize", c); }, []);
 
   useEffect(() => {
+    if (!user) return;
+    // Load settings (domains, theme, customThemes, lang)
     (async () => {
       try {
-        const [aR, dR, tR, ctR, lR] = await Promise.all([window.storage.get(STORE.actions).catch(() => null), window.storage.get(STORE.domains).catch(() => null), window.storage.get(STORE.theme).catch(() => null), window.storage.get(STORE.customThemes).catch(() => null), window.storage.get(STORE.lang).catch(() => null)]);
-        if (dR?.value) { const p = JSON.parse(dR.value); if (p.length) setDomains(p); }
-        if (aR?.value) setActions(JSON.parse(aR.value));
-        if (tR?.value) { const tt = JSON.parse(tR.value); if (tt.accent) setTheme(tt); }
-        if (ctR?.value) { const ct = JSON.parse(ctR.value); if (ct.length) setSavedThemes(ct); }
-        if (lR?.value) setLang(lR.value);
+        const [dR, tR, ctR, lR] = await Promise.all([
+          getUserDoc(user.uid, "settings", "domains").catch(() => null),
+          getUserDoc(user.uid, "settings", "theme").catch(() => null),
+          getUserDoc(user.uid, "settings", "customThemes").catch(() => null),
+          getUserDoc(user.uid, "settings", "lang").catch(() => null),
+        ]);
+        if (dR?.data) { const p = JSON.parse(dR.data); if (p.length) setDomains(p); }
+        if (tR?.data) { const tt = JSON.parse(tR.data); if (tt.accent) setTheme(tt); }
+        if (ctR?.data) { const ct = JSON.parse(ctR.data); if (ct.length) setSavedThemes(ct); }
+        if (lR?.data) setLang(lR.data);
       } catch (e) { console.error(e); }
       setLoading(false);
     })();
-  }, []);
+    // Subscribe to actions in real-time
+    const unsub = subscribeToCollection(user.uid, "actions", (items) => {
+      setActions(items);
+      if (loading) setLoading(false);
+    });
+    return unsub;
+  }, [user]);
 
-  const save = useCallback(async (k, d) => { try { await window.storage.set(k, JSON.stringify(d)); } catch (e) { console.error(e); } }, []);
-  const saveActions = useCallback((a) => { setActions(a); save(STORE.actions, a); }, [save]);
-  const saveDomains = useCallback((d) => { setDomains(d); save(STORE.domains, d); }, [save]);
+  const saveSetting = useCallback(async (key, data) => { 
+    if (!user) return;
+    try { await saveUserData(user.uid, "settings", key, { data: typeof data === "string" ? data : JSON.stringify(data) }); } catch (e) { console.error(e); } 
+  }, [user]);
+  const saveAction = useCallback(async (action) => {
+    if (!user) return;
+    try { const { id, ...data } = action; await saveUserData(user.uid, "actions", id, data); } catch (e) { console.error(e); }
+  }, [user]);
+  const deleteAction = useCallback(async (actionId) => {
+    if (!user) return;
+    try { await deleteUserDoc(user.uid, "actions", actionId); } catch (e) { console.error(e); }
+  }, [user]);
+  const saveActions = useCallback((a) => { 
+    setActions(a); 
+    // Save each changed action individually
+    a.forEach(action => saveAction(action));
+  }, [saveAction]);
+  const saveDomains = useCallback((d) => { setDomains(d); saveSetting("domains", d); }, [saveSetting]);
   const getDomain = (id) => domains.find(d => d.id === id) || { name: id, color: "#999" };
   const selectedAction = actions.find(a => a.id === selectedId);
   const updateField = (f, v) => setFormData(p => ({ ...p, [f]: v }));
 
   const addHistoryEntry = (actionId, type, details) => {
-    const updated = actions.map(a => {
-      if (a.id !== actionId) return a;
-      const h = [...(a.history || []), { date: new Date().toISOString(), action: type, details }];
-      return { ...a, history: h };
-    });
-    saveActions(updated);
+    const a = actions.find(x => x.id === actionId);
+    if (!a) return;
+    const h = [...(a.history || []), { date: new Date().toISOString(), action: type, details }];
+    saveAction({ ...a, history: h });
   };
 
   const changeStatus = (actionId, newStatus, details = "") => {
-    const updated = actions.map(a => {
-      if (a.id !== actionId) return a;
-      const h = [...(a.history || []), { date: new Date().toISOString(), action: `Status → ${newStatus}`, details }];
-      return { ...a, status: newStatus, history: h, updatedAt: new Date().toISOString() };
-    });
-    saveActions(updated);
+    const a = actions.find(x => x.id === actionId);
+    if (!a) return;
+    const h = [...(a.history || []), { date: new Date().toISOString(), action: `Status → ${newStatus}`, details }];
+    saveAction({ ...a, status: newStatus, history: h, updatedAt: new Date().toISOString() });
   };
 
   const handleRenegotiate = (actionId) => {
-    const updated = actions.map(a => {
-      if (a.id !== actionId) return a;
-      const h = [...(a.history || []), { date: new Date().toISOString(), action: "Renegociat", details: `${renegotiateNote}${renegotiateDate ? " | Nou termen: " + fmtDate(renegotiateDate) : ""}` }];
-      return { ...a, status: "Renegotiated", dueDate: renegotiateDate || a.dueDate, history: h, updatedAt: new Date().toISOString() };
-    });
-    saveActions(updated);
+    const a = actions.find(x => x.id === actionId);
+    if (!a) return;
+    const h = [...(a.history || []), { date: new Date().toISOString(), action: "Renegociat", details: `${renegotiateNote}${renegotiateDate ? " | Nou termen: " + fmtDate(renegotiateDate) : ""}` }];
+    saveAction({ ...a, status: "Renegotiated", dueDate: renegotiateDate || a.dueDate, history: h, updatedAt: new Date().toISOString() });
     setRenegotiateModal(false);
     setRenegotiateNote("");
     setRenegotiateDate("");
@@ -290,22 +312,26 @@ export default function GenesisTracker() {
   const handleSubmit = () => {
     if (!formData.title.trim()) return;
     if (editingId) {
-      const updated = actions.map(a => {
-        if (a.id !== editingId) return a;
-        const h = [...(a.history || []), { date: new Date().toISOString(), action: "Editat", details: "Angajamentul a fost actualizat" }];
-        return { ...a, ...formData, history: h, updatedAt: new Date().toISOString() };
-      });
-      saveActions(updated);
+      const existing = actions.find(a => a.id === editingId);
+      const h = [...(existing?.history || []), { date: new Date().toISOString(), action: "Editat", details: "Angajamentul a fost actualizat" }];
+      const updated = { ...existing, ...formData, id: editingId, history: h, updatedAt: new Date().toISOString() };
+      saveAction(updated);
     } else {
       const newA = { ...formData, id: uid(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), history: [{ date: new Date().toISOString(), action: "Creat", details: "Angajament nou creat" }] };
-      saveActions([newA, ...actions]);
+      saveAction(newA);
     }
     setFormData({ ...EMPTY_ACTION });
     setEditingId(null);
     setView("list");
   };
 
-  const deleteAction = (id) => { saveActions(actions.filter(a => a.id !== id && a.parentId !== id)); if (selectedId === id) { setSelectedId(null); setView("list"); } };
+  const removeAction = (id) => { 
+    // Delete from Firebase
+    deleteAction(id);
+    // Also delete children
+    actions.filter(a => a.parentId === id).forEach(child => deleteAction(child.id));
+    if (selectedId === id) { setSelectedId(null); setView("list"); } 
+  };
   const openCreate = (d) => { setFormData({ ...EMPTY_ACTION, domain: d || "personal" }); setEditingId(null); setView("create"); };
   const openCreateSub = (parentAction) => { setFormData({ ...EMPTY_ACTION, parentId: parentAction.id, domain: parentAction.domain, promisedTo: parentAction.promisedTo, dueDate: parentAction.dueDate }); setEditingId(null); setView("create"); };
   const getChildren = (parentId) => actions.filter(a => a.parentId === parentId);
@@ -917,12 +943,8 @@ export default function GenesisTracker() {
     const [saved, setSaved] = useState(false);
 
     const handleSave = () => {
-      const updated = actions.map(a => {
-        if (a.id !== action.id) return a;
-        const h = [...(a.history || []), { date: new Date().toISOString(), action: "Impact emotional actualizat", details: "Impactul emotional a fost actualizat" }];
-        return { ...a, ...eiData, history: h, updatedAt: new Date().toISOString() };
-      });
-      saveActions(updated);
+      const h = [...(action.history || []), { date: new Date().toISOString(), action: "Impact emotional actualizat", details: "Impactul emotional a fost actualizat" }];
+      saveAction({ ...action, ...eiData, history: h, updatedAt: new Date().toISOString() });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     };
@@ -1055,12 +1077,8 @@ export default function GenesisTracker() {
     const [saved, setSaved] = useState(false);
 
     const handleSave = () => {
-      const updated = actions.map(a => {
-        if (a.id !== action.id) return a;
-        const h = [...(a.history || []), { date: new Date().toISOString(), action: "VIPAS actualizat", details: "Analiza VIPAS a fost actualizata" }];
-        return { ...a, ...vData, history: h, updatedAt: new Date().toISOString() };
-      });
-      saveActions(updated);
+      const h = [...(action.history || []), { date: new Date().toISOString(), action: "VIPAS actualizat", details: "Analiza VIPAS a fost actualizata" }];
+      saveAction({ ...action, ...vData, history: h, updatedAt: new Date().toISOString() });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     };
@@ -1117,7 +1135,7 @@ export default function GenesisTracker() {
             <StatusBadge status={a.status} />
             <div style={{ display: "flex", gap: 6 }}>
               <button onClick={() => openEdit(a)} style={{ padding: "6px 14px", border: "1.5px solid #E0DDD8", borderRadius: 8, backgroundColor: "#fff", fontSize: 13, cursor: "pointer", fontFamily: "inherit", color: "#6B6660" }}>✎ Edit</button>
-              <button onClick={() => deleteAction(a.id)} style={{ padding: "6px 12px", border: "1.5px solid #C0524E30", borderRadius: 8, backgroundColor: "#C0524E10", fontSize: 13, cursor: "pointer", fontFamily: "inherit", color: "#C0524E" }}>🗑</button>
+              <button onClick={() => removeAction(a.id)} style={{ padding: "6px 12px", border: "1.5px solid #C0524E30", borderRadius: 8, backgroundColor: "#C0524E10", fontSize: 13, cursor: "pointer", fontFamily: "inherit", color: "#C0524E" }}>🗑</button>
             </div>
           </div>
           <h1 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 700, color: "#1A1A2E" }}>{a.title}</h1>
@@ -1236,23 +1254,22 @@ export default function GenesisTracker() {
   // ─── NAV ITEMS ───
   const navItems = [{ id: "dashboard", label: t("dashboard"), icon: "◫" }, { id: "list", label: t("commitments"), icon: "☰" }, { id: "domains", label: t("domains"), icon: "◈" }];
 
-  const saveTheme = useCallback((t) => { setTheme(t); save(STORE.theme, t); }, [save]);
-  const saveLang = useCallback((l) => { setLang(l); (async () => { try { await window.storage.set(STORE.lang, l); } catch(e){} })(); }, []);
+  const saveTheme = useCallback((t) => { setTheme(t); saveSetting("theme", t); }, [saveSetting]);
+  const saveLang = useCallback((l) => { setLang(l); saveSetting("lang", l); }, [saveSetting]);
   const saveCustomTheme = (name) => {
     if (!name.trim()) return;
     const ct = { ...theme, name: name.trim(), id: uid() };
     const updated = [...savedThemes, ct];
     setSavedThemes(updated);
-    save(STORE.customThemes, updated);
+    saveSetting("customThemes", updated);
     setTheme(ct);
-    save(STORE.theme, ct);
+    saveSetting("theme", ct);
   };
   const deleteCustomTheme = (id) => {
     const updated = savedThemes.filter(t => t.id !== id);
     setSavedThemes(updated);
-    save(STORE.customThemes, updated);
+    saveSetting("customThemes", updated);
   };
-  const saveCustomThemes = useCallback((t) => { setSavedThemes(t); save(STORE.customThemes, t); }, [save]);
 
   // Domains that have at least one action
   const activeDomains = useMemo(() => {
@@ -1516,6 +1533,12 @@ export default function GenesisTracker() {
               {t("customize")}
             </button>
             <button onClick={() => setShowDomainModal(true)} style={{ width: "100%", padding: "8px 12px", border: "1px dashed #3A3A50", borderRadius: 8, backgroundColor: "transparent", color: "#6B6B80", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>{t("newDomain")}</button>
+            {user && (
+              <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid #3A3A50" }}>
+                <p style={{ color: "#8B8680", fontSize: 10, margin: "0 0 6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</p>
+                <button onClick={onLogout} style={{ width: "100%", padding: "6px 10px", border: "1px solid #3A3A50", borderRadius: 6, backgroundColor: "transparent", color: "#C0524E", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>{t("logout")}</button>
+              </div>
+            )}
             <p style={{ color: "#3A3A50", fontSize: 10, marginTop: 12, textAlign: "center" }}>Track. Reflect. Grow.</p>
           </div>
         </nav>
