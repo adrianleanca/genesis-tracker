@@ -48,7 +48,7 @@ const T = {
     manageDomains: "Gestioneaza categoriile angajamentelor tale",
     noHistory: "Niciun eveniment in istoric.", activeLabel: "Activa",
     today: "Azi", daysLeft: "z", overdue: "z dep.",
-    logout: "Deconecteaza-te", addDomain: "Adauga", domainName: "Nume domeniu", color: "Culoare",
+    logout: "Deconecteaza-te", donate: "Susține proiectul", addDomain: "Adauga", domainName: "Nume domeniu", color: "Culoare",
     phOutcome: "Ce se va intampla cand e indeplinit?", phCost: "Ce costa?", phRisk: "Ce ar putea merge prost?",
     phDistract: "Ce distractii vei elimina?", phResources: "Timp, bani, energie...", phSupport: "De cine ai nevoie?", phTriggers: "Ce ar putea te deraia?",
     phNowSelf: "Cum ma percep pe mine insumi acum?", phNowOthers: "Cum ma vad ceilalti acum?", phNowWorld: "Ce impact am asupra lumii acum?",
@@ -106,7 +106,7 @@ const T = {
     manageDomains: "Manage your commitment categories",
     noHistory: "No events in history.", activeLabel: "Active",
     today: "Today", daysLeft: "d", overdue: "d over.",
-    logout: "Log out", addDomain: "Add", domainName: "Domain name", color: "Color",
+    logout: "Log out", donate: "Support this project", addDomain: "Add", domainName: "Domain name", color: "Color",
     phOutcome: "What will happen when fulfilled?", phCost: "What does it cost?", phRisk: "What could go wrong?",
     phDistract: "What distractions will you remove?", phResources: "Time, money, energy...", phSupport: "Who do you need?", phTriggers: "What could derail you?",
     phNowSelf: "How do I perceive myself now?", phNowOthers: "How do others see me now?", phNowWorld: "What impact do I have on the world now?",
@@ -668,7 +668,7 @@ export default function GenesisTracker({ user, onLogout }) {
                 if (data.error) throw new Error(data.error);
                 const result = data.parsed || JSON.parse((data.result || "").replace(/```json|```/g, "").trim());
                 setAiPatterns(result);
-              } catch (e) { setAiPatterns({ error: true }); }
+              } catch (e) { console.error("AI patterns error:", e); setAiPatterns({ error: true }); }
               setAiLoading(null);
             }} disabled={aiLoading === "patterns" || actions.length === 0} style={{
               padding: "7px 16px", backgroundColor: "#7C6CA8", color: "#fff", border: "none", borderRadius: 8,
@@ -758,7 +758,7 @@ export default function GenesisTracker({ user, onLogout }) {
                 if (data.error) throw new Error(data.error);
                 const result = data.parsed || JSON.parse((data.result || "").replace(/```json|```/g, "").trim());
                 setAiPlan(result);
-              } catch (e) { setAiPlan({ error: true }); }
+              } catch (e) { console.error("AI plan error:", e); setAiPlan({ error: true }); }
               setAiLoading(null);
             }} disabled={aiLoading === "plan" || actions.length === 0} style={{
               padding: "7px 16px", backgroundColor: "#C0524E", color: "#fff", border: "none", borderRadius: 8,
@@ -1536,7 +1536,8 @@ export default function GenesisTracker({ user, onLogout }) {
             {user && (
               <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid #3A3A50" }}>
                 <p style={{ color: "#8B8680", fontSize: 10, margin: "0 0 6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</p>
-                <button onClick={onLogout} style={{ width: "100%", padding: "6px 10px", border: "1px solid #3A3A50", borderRadius: 6, backgroundColor: "transparent", color: "#C0524E", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>{t("logout")}</button>
+                <button onClick={onLogout} style={{ width: "100%", padding: "6px 10px", border: "1px solid #3A3A50", borderRadius: 6, backgroundColor: "transparent", color: "#C0524E", fontSize: 11, cursor: "pointer", fontFamily: "inherit", marginBottom: 8 }}>{t("logout")}</button>
+                <a href="https://revolut.me/YOUR_REVOLUT_LINK" target="_blank" rel="noopener noreferrer" style={{ display: "block", width: "100%", padding: "6px 10px", border: "1px solid #3A3A50", borderRadius: 6, backgroundColor: theme.accent + "15", color: theme.accent, fontSize: 11, cursor: "pointer", fontFamily: "inherit", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>☕ {t("donate")}</a>
               </div>
             )}
             <p style={{ color: "#3A3A50", fontSize: 10, marginTop: 12, textAlign: "center" }}>Track. Reflect. Grow.</p>
@@ -1544,14 +1545,14 @@ export default function GenesisTracker({ user, onLogout }) {
         </nav>
       )}
       <main style={isMobile ? { padding: "18px 14px 80px" } : { marginLeft: 210, padding: "28px 36px", maxWidth: 960 }}>
-        {view === "dashboard" && <DashboardView />}
-        {view === "list" && <ListView />}
-        {view === "create" && <CreateView />}
-        {view === "detail" && <DetailView />}
-        {view === "domains" && <DomainsView />}
-        {view === "theme" && <ThemeView />}
+        {view === "dashboard" && DashboardView()}
+        {view === "list" && ListView()}
+        {view === "create" && CreateView()}
+        {view === "detail" && DetailView()}
+        {view === "domains" && DomainsView()}
+        {view === "theme" && ThemeView()}
       </main>
-      <DomainModal />
+      {DomainModal()}
     </div>
   );
 }
