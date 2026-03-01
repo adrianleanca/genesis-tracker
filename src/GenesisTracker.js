@@ -476,17 +476,17 @@ export default function GenesisTracker({ user, onLogout }) {
 
   // ─── VIPAS SECTION ───
   const vipasItems = [
-    { key: "vipas_vision", letter: "V", title: "Vision of Probable Future", color: "#3D7C98", ph: "Dacă continui pe traiectoria curentă, ce viitor devine probabil?" },
-    { key: "vipas_impact", letter: "I", title: "Impact Assessment", color: "#D4A843", ph: "Care sunt consecințele asupra vieții, relațiilor și obiectivelor tale?" },
-    { key: "vipas_pattern", letter: "P", title: "Pattern Recognition", color: "#5B8C5A", ph: "Ce tipar recurent observi care duce la acest rezultat?" },
-    { key: "vipas_assumption", letter: "A", title: "Assumption to Challenge", color: "#C0524E", ph: "Ce credință ascunsă alimentează acest tipar?" },
-    { key: "vipas_solution", letter: "S", title: "Structural Solution", color: "#7C6CA8", ph: "Ce schimbare structurală va sparge tiparul?" },
+    { key: "vipas_vision", letter: "V", title: lang === "ro" ? "Viziunea Viitorului Probabil" : "Vision of Probable Future", color: "#3D7C98", ph: lang === "ro" ? "Dacă continui pe traiectoria curentă, ce viitor devine probabil?" : "If you continue on your current trajectory, what future becomes likely?" },
+    { key: "vipas_impact", letter: "I", title: lang === "ro" ? "Evaluarea Impactului" : "Impact Assessment", color: "#D4A843", ph: lang === "ro" ? "Care sunt consecințele asupra vieții, relațiilor și obiectivelor tale?" : "What are the consequences on your life, relationships and goals?" },
+    { key: "vipas_pattern", letter: "P", title: lang === "ro" ? "Recunoașterea Tiparului" : "Pattern Recognition", color: "#5B8C5A", ph: lang === "ro" ? "Ce tipar recurent observi care duce la acest rezultat?" : "What recurring pattern do you observe leading to this result?" },
+    { key: "vipas_assumption", letter: "A", title: lang === "ro" ? "Asumpția de Contestat" : "Assumption to Challenge", color: "#C0524E", ph: lang === "ro" ? "Ce credință ascunsă alimentează acest tipar?" : "What hidden belief fuels this pattern?" },
+    { key: "vipas_solution", letter: "S", title: lang === "ro" ? "Soluția Structurală" : "Structural Solution", color: "#7C6CA8", ph: lang === "ro" ? "Ce schimbare structurală va sparge tiparul?" : "What structural change will break the pattern?" },
   ];
 
   const VipasForm = () => (
     <div>
-      <h3 style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700 }}>🔬 VIPAS Analysis</h3>
-      <p style={{ fontSize: 12, color: "#8B8680", margin: "0 0 16px" }}>Înțelege structurile profunde și creează intervenții durabile</p>
+      <h3 style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700 }}>🔬 {lang === "ro" ? "Analiza VIPAS" : "VIPAS Analysis"}</h3>
+      <p style={{ fontSize: 12, color: "#8B8680", margin: "0 0 16px" }}>{lang === "ro" ? "Înțelege structurile profunde și creează intervenții durabile" : "Understand deep structures and create lasting interventions"}</p>
       {vipasItems.map(v => (
         <div key={v.key} style={{ marginBottom: 14, borderLeft: `3px solid ${v.color}`, paddingLeft: 14 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -504,8 +504,8 @@ export default function GenesisTracker({ user, onLogout }) {
     return (
       <div>
         <div style={{ backgroundColor: "#F8F7FF", borderRadius: 12, padding: 18, marginBottom: 18, border: "1px solid #E8E4F0" }}>
-          <h4 style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700 }}>VIPAS Analysis Engine</h4>
-          <p style={{ fontSize: 12, color: "#6B6660", margin: 0 }}>Framework-ul VIPAS te ajută să înțelegi structurile profunde și să creezi schimbări durabile.</p>
+          <h4 style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700 }}>{lang === "ro" ? "Motor de Analiză VIPAS" : "VIPAS Analysis Engine"}</h4>
+          <p style={{ fontSize: 12, color: "#6B6660", margin: 0 }}>{lang === "ro" ? "Framework-ul VIPAS te ajută să înțelegi structurile profunde și să creezi schimbări durabile." : "The VIPAS framework helps you understand deep structures and create lasting changes."}</p>
         </div>
         {!hasAny && <p style={{ color: "#8B8680", fontSize: 14, textAlign: "center", padding: 20 }}>VIPAS nu a fost completat încă.</p>}
         {vipasItems.map(v => a[v.key] ? (
@@ -1086,8 +1086,8 @@ export default function GenesisTracker({ user, onLogout }) {
     return (
       <div>
         <div style={{ backgroundColor: "#F8F7FF", borderRadius: 12, padding: 18, marginBottom: 18, border: "1px solid #E8E4F0" }}>
-          <h4 style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700 }}>VIPAS Analysis Engine</h4>
-          <p style={{ fontSize: 12, color: "#6B6660", margin: 0 }}>Framework-ul VIPAS te ajuta sa intelegi structurile profunde si sa creezi schimbari durabile.</p>
+          <h4 style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700 }}>{lang === "ro" ? "Motor de Analiză VIPAS" : "VIPAS Analysis Engine"}</h4>
+          <p style={{ fontSize: 12, color: "#6B6660", margin: 0 }}>{lang === "ro" ? "Framework-ul VIPAS te ajută să înțelegi structurile profunde și să creezi schimbări durabile." : "The VIPAS framework helps you understand deep structures and create lasting changes."}</p>
         </div>
         {vipasItems.map(v => (
           <div key={v.key} style={{ marginBottom: 16, borderLeft: `3px solid ${v.color}`, paddingLeft: 14 }}>
@@ -1537,7 +1537,7 @@ export default function GenesisTracker({ user, onLogout }) {
               <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid #3A3A50" }}>
                 <p style={{ color: "#8B8680", fontSize: 10, margin: "0 0 6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</p>
                 <button onClick={onLogout} style={{ width: "100%", padding: "6px 10px", border: "1px solid #3A3A50", borderRadius: 6, backgroundColor: "transparent", color: "#C0524E", fontSize: 11, cursor: "pointer", fontFamily: "inherit", marginBottom: 8 }}>{t("logout")}</button>
-                <a href="https://revolut.me/YOUR_REVOLUT_LINK" target="_blank" rel="noopener noreferrer" style={{ display: "block", width: "100%", padding: "6px 10px", border: "1px solid #3A3A50", borderRadius: 6, backgroundColor: theme.accent + "15", color: theme.accent, fontSize: 11, cursor: "pointer", fontFamily: "inherit", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>☕ {t("donate")}</a>
+                <a href="https://revolut.me/adrianqz0e" target="_blank" rel="noopener noreferrer" style={{ display: "block", width: "100%", padding: "6px 10px", border: "1px solid #3A3A50", borderRadius: 6, backgroundColor: theme.accent + "15", color: theme.accent, fontSize: 11, cursor: "pointer", fontFamily: "inherit", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>☕ {t("donate")}</a>
               </div>
             )}
             <p style={{ color: "#3A3A50", fontSize: 10, marginTop: 12, textAlign: "center" }}>Track. Reflect. Grow.</p>
