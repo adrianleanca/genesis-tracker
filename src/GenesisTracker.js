@@ -1477,6 +1477,17 @@ export default function GenesisTracker({ user, onLogout }) {
     <div style={{ fontFamily: "'Segoe UI', 'SF Pro Display', -apple-system, sans-serif", backgroundColor: theme.bg, minHeight: "100vh", color: theme.text }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} ::selection{background:${theme.accent};color:#fff} textarea:focus,input:focus,select:focus{border-color:${theme.accent}!important;box-shadow:0 0 0 3px ${theme.accent}20}`}</style>
       {isMobile ? (
+        <>
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, backgroundColor: theme.sidebar, padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 101, boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}>
+          <div>
+            <span style={{ color: "#fff", fontSize: 15, fontWeight: 700 }}>Genesis</span>
+            <span style={{ color: "#6B6B80", fontSize: 10, marginLeft: 8 }}>{user?.email}</span>
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <a href="https://revolut.me/adrianqz0e" target="_blank" rel="noopener noreferrer" style={{ padding: "4px 10px", borderRadius: 6, backgroundColor: theme.accent + "30", color: "#B8A9D4", fontSize: 11, textDecoration: "none", fontFamily: "inherit" }}>☕</a>
+            <button onClick={onLogout} style={{ padding: "4px 10px", border: "1px solid #3A3A50", borderRadius: 6, backgroundColor: "transparent", color: "#C0524E", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>{t("logout")}</button>
+          </div>
+        </div>
         <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, backgroundColor: theme.sidebar, display: "flex", justifyContent: "space-around", padding: "6px 0 10px", zIndex: 100, boxShadow: "0 -2px 10px rgba(0,0,0,0.15)" }}>
           {navItems.map(n => (
             <button key={n.id} onClick={() => setView(n.id)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "6px 16px", border: "none", backgroundColor: "transparent", color: view === n.id || (n.id === "list" && ["create", "detail"].includes(view)) ? "#B8A9D4" : "#6B6B80", fontSize: 10, cursor: "pointer", fontFamily: "inherit" }}>
@@ -1484,6 +1495,7 @@ export default function GenesisTracker({ user, onLogout }) {
             </button>
           ))}
         </nav>
+        </>
       ) : (
         <nav style={{ position: "fixed", left: 0, top: 0, bottom: 0, width: 210, backgroundColor: theme.sidebar, padding: "24px 0", display: "flex", flexDirection: "column", zIndex: 100 }}>
           <div style={{ padding: "0 20px", marginBottom: 30 }}>
@@ -1544,7 +1556,7 @@ export default function GenesisTracker({ user, onLogout }) {
           </div>
         </nav>
       )}
-      <main style={isMobile ? { padding: "18px 14px 80px" } : { marginLeft: 210, padding: "28px 36px", maxWidth: 960 }}>
+      <main style={isMobile ? { padding: "56px 14px 80px" } : { marginLeft: 210, padding: "28px 36px", maxWidth: 960 }}>
         {view === "dashboard" && DashboardView()}
         {view === "list" && ListView()}
         {view === "create" && CreateView()}
